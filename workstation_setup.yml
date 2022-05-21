@@ -230,6 +230,30 @@
         groups: docker
         append: true
 
+    - name: Add gh-cli repo key
+      become: true
+      ansible.builtin.rpm_key:
+        key: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xc99b11deb97541f0
+        state: present
+      
+    - name: Add gh-cli repo
+      become: true
+      ansible.builtin.yum_repository:
+        name: gh-cli
+        description: packages for the GitHub CLI
+        baseurl: https://cli.github.com/packages/rpm
+        gpgkey: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xc99b11deb97541f0
+        file: gh-cli
+        gpgcheck: yes
+        enabled: yes
+        state: present
+
+    - name: Install GitHub CLI tool
+      become: true
+      ansible.builtin.package:
+        name: gh
+        update_cache: true
+
     - name: Add vscode repo key
       become: true
       ansible.builtin.rpm_key:
