@@ -1,0 +1,460 @@
+#!/bin/ansible-playbook --ask-become-pass
+---
+
+#dont show scrollbars on gnome terminal
+#add wayland support to chromium
+#change defualt browswer to chromium
+
+# TODO
+# bash custonmization
+    # bash_aliases
+    # export EDITOR=nvim
+# tmux configuration
+# setup snapper
+# Install notion
+# Install email client
+
+# Manual steps
+# Add wayland support to chromium
+# Login to chromium
+# Login to websites
+# Freetube subscriptions
+# SSH keys/config
+# Login to vscode
+# Setup github cli
+# Import awscli keys
+
+- hosts: localhost
+  vars:
+    - workstation_user: jrh
+    - workstation_group: jrh
+
+  tasks:
+
+    # Package Manager
+    - name: Update packages
+      become: true
+      ansible.builtin.package:
+        name: "*"
+        state: latest
+
+    - name: Install required packages
+      become: true
+      ansible.builtin.package:
+        name: 
+          - neovim
+          - git
+          - flatpak
+          - tmux
+          - podman
+          - toolbox
+          - gh
+          - wireguard-tools
+          - rclone
+          - snapper
+          - rsync
+          - nmap
+          - docker-compose
+          - dnf-plugins-core
+          - youtube-dl
+          - python3-pip
+
+    # Flatpak package installation
+    - name: Add flathub repo
+      become: true
+      ansible.builtin.shell: flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+      changed_when: false
+
+    - name: Install flatpak apps from flathub
+      become: true
+      ansible.builtin.shell: flatpak install flathub "{{ item }}" -y
+      with_items:
+        - com.spotify.Client
+        - org.chromium.Chromium
+        - io.freetubeapp.FreeTube
+        - io.mpv.Mpv
+        - com.transmissionbt.Transmission
+      changed_when: false
+
+    # GNOME Customization
+    # Use gsettings list-schemas and gsettings list-recursively to get all possible settings
+    - name: Show battery percentage
+      ansible.builtin.shell: gsettings set org.gnome.desktop.interface show-battery-percentage true
+      changed_when: false
+    
+    - name: Change clock format to 12h
+      ansible.builtin.shell: gsettings set org.gnome.desktop.interface clock-format 12h
+      changed_when: false
+
+    - name: Enable tap to click on touchpad
+      ansible.builtin.shell: gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
+      changed_when: false
+
+    - name: Disable natural scroll
+      ansible.builtin.shell: gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll false
+      changed_when: false
+
+    - name: Disable auto brightness
+      ansible.builtin.shell: gsettings set org.gnome.settings-daemon.plugins.power ambient-enabled false
+      changed_when: false
+
+    - name: Enable Night Light
+      ansible.builtin.shell: gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled true
+      changed_when: false
+
+    - name: Set Night Light color temperature
+      ansible.builtin.shell: gsettings set org.gnome.settings-daemon.plugins.color night-light-temperature 1730
+      changed_when: false
+
+    - name: Set Favorite Apps
+      ansible.builtin.shell: |
+        gsettings set org.gnome.shell favorite-apps \
+        "[ \
+         'org.chromium.Chromium.desktop', \
+         'org.gnome.Terminal.desktop', \
+         'org.gnome.Nautilus.desktop', \
+         'code.desktop', \
+         'com.spotify.Client.desktop', \
+         'org.gnome.Software.desktop' \
+        ]"
+      changed_when: false
+
+    - name: Get terminal profile id
+      ansible.builtin.shell: gsettings get org.gnome.Terminal.ProfilesList default | awk -F \' '{print $2}'
+      register: terminal_id
+      changed_when: false
+
+    - name: Customize terminal font
+      ansible.builtin.shell: gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ terminal_id.stdout }}/ font 'Source Code Pro 12'
+      changed_when: false
+
+    - name: Customize terminal turn off audible bell
+      ansible.builtin.shell: gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ terminal_id.stdout }}/ audible-bell false
+      changed_when: false
+
+    - name: Customize terminal turn off audible bell
+      ansible.builtin.shell: gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ terminal_id.stdout }}/ audible-bell false
+      changed_when: false
+
+    - name: Customize terminal turn on transparent background
+      ansible.builtin.shell: gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ terminal_id.stdout }}/ use-transparent-background true
+      changed_when: false
+
+    - name: Customize terminal set background transparency percentage
+      ansible.builtin.shell: gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ terminal_id.stdout }}/ background-transparency-percent 10
+      changed_when: false
+
+    - name: Customize terminal disable system theme option
+      ansible.builtin.shell: gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ terminal_id.stdout }}/ use-theme-colors false
+      changed_when: false
+
+    - name: Customize terminal set background color
+      ansible.builtin.shell: gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ terminal_id.stdout }}/ background-color '#282828'
+      changed_when: false
+
+    - name: Customize terminal set foreground color
+      ansible.builtin.shell: gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ terminal_id.stdout }}/ foreground-color '#ebdbb2'
+      changed_when: false
+
+    - name: Customize terminal set color palette to gruvbox dark
+      ansible.builtin.shell: |
+        gsettings set org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{{ terminal_id.stdout }}/ palette \
+        "[ \
+         'rgb(146,131,116)',\
+         'rgb(251,73,52)',\
+         'rgb(184,187,38)',\
+         'rgb(250,189,47)',\
+         'rgb(131,165,152)',\
+         'rgb(211,134,155)',\
+         'rgb(142,192,124)',\
+         'rgb(235,219,178)',\
+         'rgb(40,40,40)',\
+         'rgb(204,36,29)',\
+         'rgb(152,151,26)',\
+         'rgb(215,153,33)',\
+         'rgb(69,133,136)',\
+         'rgb(177,98,134)',\
+         'rgb(104,157,106)',\
+         'rgb(168,153,132)'\
+        ]"
+      changed_when: false
+
+    - name: Set Caps Lock to Escape
+      ansible.builtin.shell: gsettings set org.gnome.desktop.input-sources xkb-options "['caps:swapescape']"
+      changed_when: false
+
+    - name: Enable docker
+      become: true
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Create docker group
+      become: true
+      ansible.builtin.group:
+        name: docker
+        state: present
+
+    - name: Add user to docker
+      become: true
+      ansible.builtin.user:
+        name: "{{ workstation_user }}"
+        groups: docker
+        append: true
+
+    - name: Add vscode repo key
+      become: true
+      ansible.builtin.rpm_key:
+        key: https://packages.microsoft.com/keys/microsoft.asc
+        state: present
+      
+    - name: Add vscode repo
+      become: true
+      ansible.builtin.yum_repository:
+        name: code
+        description: Visual-Studio-Code
+        baseurl: https://packages.microsoft.com/yumrepos/vscode
+        gpgkey: https://packages.microsoft.com/keys/microsoft.asc
+        file: vscode
+        gpgcheck: yes
+        enabled: yes
+        state: present
+
+    - name: Install vscode
+      become: true
+      ansible.builtin.package:
+        name: code
+        update_cache: true
+
+    - name: Add hashicorp repo key
+      become: true
+      ansible.builtin.rpm_key:
+        key: https://rpm.releases.hashicorp.com/gpg 
+        state: present
+      
+    - name: Add hashicorp stable repo
+      become: true
+      ansible.builtin.yum_repository:
+        name: hashicorp
+        description: Hashicorp Stable - $basearch
+        baseurl: https://rpm.releases.hashicorp.com/fedora/$releasever/$basearch/stable
+        gpgkey: https://rpm.releases.hashicorp.com/gpg 
+        file: hashicorp
+        gpgcheck: yes
+        enabled: yes
+        state: present
+
+    - name: Add hashicorp test repo
+      become: true
+      ansible.builtin.yum_repository:
+        name: hashicorp-test
+        description: Hashicorp Test - $basearch
+        baseurl: https://rpm.releases.hashicorp.com/fedora/$releasever/$basearch/test
+        gpgkey: https://rpm.releases.hashicorp.com/gpg 
+        file: hashicorp
+        gpgcheck: yes
+        enabled: no
+        state: present
+
+    - name: Install hashicorp packages
+      become: true
+      ansible.builtin.package:
+        name: 
+          - terraform
+          - packer
+          - vagrant
+
+    # aws cli tool
+    - name: Check to see if aws cli is installed
+      shell: |
+        aws --version
+      changed_when: false
+      failed_when: false
+      register: aws_version
+
+    - name: Install aws cli tool
+      block: 
+      - name: Download aws cli tool
+        ansible.builtin.shell: |
+          cd ~/Downloads
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+        changed_when: false
+  
+      - name: Install aws cli tool
+        become: true
+        ansible.builtin.shell: |
+          cd /home/{{ workstation_user }}/Downloads
+          ./aws/install
+        changed_when: false
+      when: aws_version.rc != 0
+
+    # logiops service
+    - name: Check to see if logiops is installed
+      become: true
+      shell: |
+        logid --version
+        cat /etc/logid.cfg
+      changed_when: false
+      failed_when: false
+      register: logid_version
+
+    - name: Install logid service
+      block:
+      - name: Install required packages for logiops
+        become: true
+        ansible.builtin.package:
+          name: 
+            - cmake 
+            - libevdev-devel
+            - systemd-devel
+            - libconfig-devel
+            - gcc-c++
+
+      - name: Clone logiops repo
+        ansible.builtin.git:
+          repo: https://github.com/PixlOne/logiops.git
+          dest: /home/{{ workstation_user }}/Downloads/logiops
+          clone: yes
+          update: yes
+
+      - name: Build logiops package
+        ansible.builtin.shell: |
+          cd /home/{{ workstation_user }}/Downloads/logiops
+          mkdir build
+          cd build
+          cmake ..
+          make
+        changed_when: false
+
+      - name: Install logiops service
+        become: true
+        ansible.builtin.shell: |
+          cd /home/{{ workstation_user }}/Downloads/logiops/build
+          make install
+        changed_when: false
+
+      - name: Add /etc/logid.cfg
+        become: true
+        ansible.builtin.copy:
+          dest:  /etc/logid.cfg
+          owner: root
+          group: root
+          mode: '0644'
+          backup: true
+          content: |
+            // https://github.com/torvalds/linux/blob/master/include/uapi/linux/input-event-codes.h
+            // https://wiki.archlinux.org/title/Logitech_MX_Master#Mappings_for_extra_buttons
+            
+            devices: (
+            {
+                name: "Wireless Mouse MX Master";
+            
+                smartshift: { on: true; threshold: 10; };
+            
+                hiresscroll: { hires: false; invert: false; target: false; };
+            
+                dpi: 1000;
+            
+                buttons: (
+            
+                // Middle key
+                { cid: 0xc4; action = { type: "ToggleSmartshift"; }; },
+            
+                // Thumb key
+                { cid: 0xc3; action = { type: "Keypress"; keys: ["KEY_LEFTMETA"]; }; },
+            
+                // Forward key 
+                // Mapped to the default GNOME desktop switch to left shortcut
+                { cid: 0x56; action = { type: "Keypress"; keys: ["KEY_LEFTMETA", "KEY_PAGEDOWN"]; }; },
+            
+                // Back key
+                // Mapped to the default GNOME desktop switch to right shortcut
+                { cid: 0x53; action = { type: "Keypress"; keys: ["KEY_LEFTMETA", "KEY_PAGEUP"]; }; }
+            
+                );
+            });
+
+      - name: Cleanup logiops folder
+        become: true
+        ansible.builtin.file: 
+          path: /home/{{ workstation_user }}/Downlads/logiops
+          state: absent
+
+      - name: Remove required packages for logiops
+        become: true
+        ansible.builtin.package:
+          name: 
+            - cmake 
+            - libevdev-devel
+            - systemd-devel
+            - libconfig-devel
+            - gcc-c++
+          state: absent
+
+      - name: Enable and start logid service
+        ansible.builtin.systemd:
+          name: logid
+          state: started
+          enabled: yes
+      when: logid_version.rc != 0
+
+    - name: Add neovim config
+      ansible.builtin.copy:
+        dest: /home/{{ workstation_user }}/.config/nvim/init.vim 
+        owner: "{{ workstation_user }}"
+        group: "{{ workstation_group }}"
+        mode: '0644'
+        backup: true
+        content: |
+          syntax enable
+          set textwidth=79
+          set shiftwidth=4
+          set tabstop=4
+          set expandtab
+          set softtabstop=4
+          set shiftround
+          set autoindent
+          set smarttab
+          set ignorecase
+          set incsearch
+          set hlsearch
+          set ruler
+          set number
+          set relativenumber
+          set visualbell
+          set title
+          set wildmenu
+          set history=100
+          set termguicolors
+          "set cursorline
+          set showcmd
+          set showmatch
+          "set foldenable
+          "set foldmethod=indent
+          "set foldnestmax=1
+          "set foldlevelstart=0
+          "
+
+    - name: Add git config
+      ansible.builtin.copy:
+        dest: /home/{{ workstation_user }}/.config/git/git
+        owner: "{{ workstation_user }}"
+        group: "{{ workstation_group }}"
+        mode: '0644'
+        backup: true
+        content: |
+          [user]
+              name = Joshua Hernandez
+              email = joshua1571@gmail.com
+              username = joshua1571
+          [core]
+              excludesfile = ~/.gitignore_global
+              editor = vim
+              whitespace = fix,-indent-with-non-tab,trailing-space,cr-at-eol
+          [color]
+              ui = auto
+          [github]
+              user = joshua1571
+
