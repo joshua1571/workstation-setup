@@ -183,7 +183,34 @@
       ansible.builtin.shell: gsettings set org.gnome.desktop.input-sources xkb-options "['caps:swapescape']"
       changed_when: false
 
-    - name: Enable docker
+    - name: Add docker repo key
+      become: true
+      ansible.builtin.rpm_key:
+        key: https://download.docker.com/linux/fedora/gpg
+        state: present
+
+    - name: Add docker repo
+      become: true
+      ansible.builtin.yum_repository:
+        name: docker-ce-stable
+        description: Docker CE Stable - $basearch
+        baseurl: https://download.docker.com/linux/fedora/$releasever/$basearch/stable
+        gpgkey: https://download.docker.com/linux/fedora/gpg
+        file: docker
+        gpgcheck: yes
+        enabled: yes
+
+    - name: Install docker
+      become: true
+      ansible.builtin.package:
+        name: 
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        update_cache: true
+
+    - name: Enable and start docker
       become: true
       ansible.builtin.systemd:
         name: docker
@@ -394,11 +421,20 @@
           state: absent
 
       - name: Enable and start logid service
+        become: true
         ansible.builtin.systemd:
           name: logid
           state: started
           enabled: yes
       when: logid_version.rc != 0
+
+    - name: Create neovim config folder
+      ansible.builtin.file:
+        path: "/home/{{ workstation_user }}/.config/nvim"
+        state: directory
+        owner: "{{ workstation_user }}"
+        group: "{{ workstation_group }}"
+        mode: '0755'
 
     - name: Add neovim config
       ansible.builtin.copy:
@@ -437,6 +473,14 @@
           "set foldlevelstart=0
           "
 
+    - name: Create git config folder
+      ansible.builtin.file:
+        path: "/home/{{ workstation_user }}/.config/git"
+        state: directory
+        owner: "{{ workstation_user }}"
+        group: "{{ workstation_group }}"
+        mode: '0755'
+
     - name: Add git config
       ansible.builtin.copy:
         dest: /home/{{ workstation_user }}/.config/git/git
@@ -458,3 +502,9 @@
           [github]
               user = joshua1571
 
+    - name: Enable and start sshd service
+      become: true
+      ansible.builtin.systemd:
+        name: sshd
+        state: started
+        enabled: yes
