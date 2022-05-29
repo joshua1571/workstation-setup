@@ -48,7 +48,9 @@
           - podman
           - toolbox
           - gh
+          - alacritty
           - wireguard-tools
+          - adobe-source-code-pro-fonts
           - rclone
           - snapper
           - rsync
@@ -73,6 +75,7 @@
         - io.freetubeapp.FreeTube
         - io.mpv.Mpv
         - com.transmissionbt.Transmission
+        - io.github.shiftey.Desktop
       changed_when: false
 
     # GNOME Customization
@@ -275,6 +278,30 @@
       become: true
       ansible.builtin.package:
         name: code
+        update_cache: true
+
+    - name: Add brave browser repo key
+      become: true
+      ansible.builtin.rpm_key:
+        key: https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
+        state: present
+      
+    - name: Add brave browser repo
+      become: true
+      ansible.builtin.yum_repository:
+        name: brave
+        description: brave-browser
+        baseurl: https://brave-browser-rpm-release.s3.brave.com/x86_64/
+        gpgkey: https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
+        file: brave-core
+        gpgcheck: yes
+        enabled: yes
+        state: present
+
+    - name: Install brave-browser
+      become: true
+      ansible.builtin.package:
+        name: brave-browser
         update_cache: true
 
     - name: Add hashicorp repo key
@@ -645,6 +672,59 @@
           # messages
           #set -g message-style bg=default,fg=colour1,b
       
+    - name: Create alacritty config folder
+      ansible.builtin.file:
+        path: "/home/{{ workstation_user }}/.config/alacritty"
+        state: directory
+        owner: "{{ workstation_user }}"
+        group: "{{ workstation_group }}"
+        mode: '0755'
+
+    - name: Add alacritty config
+      ansible.builtin.copy:
+        dest: /home/{{ workstation_user }}/.config/alacritty/alacritty.yml
+        owner: "{{ workstation_user }}"
+        group: "{{ workstation_group }}"
+        mode: '0644'
+        backup: true
+        content: |
+          window:
+            decorations: full
+            title: Alacritty
+            dynamic_title: true
+            opacity: 0.85
+          font:
+            normal:
+              family: monospace
+              style: Source Code Pro
+            size: 12.0
+          colors:
+            primary:
+              background: '0x282828'
+              foreground: '0xebdbb2'
+            normal:
+              black:   '0x282828'
+              red:     '0xcc241d'
+              green:   '0x98971a'
+              yellow:  '0xd79921'
+              blue:    '0x458588'
+              magenta: '0xb16286'
+              cyan:    '0x689d6a'
+              white:   '0xa89984'
+            bright:
+              black:   '0x928374'
+              red:     '0xfb4934'
+              green:   '0xb8bb26'
+              yellow:  '0xfabd2f'
+              blue:    '0x83a598'
+              magenta: '0xd3869b'
+              cyan:    '0x8ec07c'
+              white:   '0xebdbb2'
+          bell:
+            duration: 125
+            color: '#cccccc'
+          live_config_reload: true
+
     - name: Enable and start sshd service
       become: true
       ansible.builtin.systemd:
