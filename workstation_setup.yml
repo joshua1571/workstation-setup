@@ -3,15 +3,15 @@
 
 #dont show scrollbars on gnome terminal
 #add wayland support to chromium
-#change defualt browswer to chromium
+#change defualt browser to chromium
 
 # TODO
 # bash custonmization
     # bash_aliases
     # export EDITOR=nvim
 # setup snapper
-# Install notion
 # Install email client
+# Install bitwarden-cli
 
 # Manual steps
 # Add wayland support to chromium
@@ -19,7 +19,6 @@
 # Login to websites
 # Freetube subscriptions
 # SSH keys/config
-# Login to vscode
 # Setup github cli
 # Import awscli keys
 
