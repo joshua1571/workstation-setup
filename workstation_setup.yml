@@ -29,6 +29,11 @@
 
   tasks:
 
+    - name: Set hostname
+      become: true
+      ansible.builtin.hostname:
+        name: fedora
+
     # Package Manager
     - name: Update packages
       become: true
@@ -44,7 +49,7 @@
           - git
           - flatpak
           - tmux
-          - podman
+         #- podman
           - toolbox
           - gh
           - alacritty
@@ -58,6 +63,15 @@
           - dnf-plugins-core
           - youtube-dl
           - python3-pip
+        state: latest
+
+    - name: Remove conflicting packages
+      become: true
+      ansible.builtin.package:
+        name: 
+          - moby-engine
+          - containerd
+        state: absent
 
     # Flatpak package installation
     - name: Add flathub repo
@@ -111,7 +125,7 @@
       ansible.builtin.shell: |
         gsettings set org.gnome.shell favorite-apps \
         "[ \
-         'org.chromium.Chromium.desktop', \
+         'firefox.desktop', \
          'org.gnome.Terminal.desktop', \
          'org.gnome.Nautilus.desktop', \
          'code.desktop', \
